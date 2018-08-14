@@ -47,33 +47,17 @@ public class AcceptHandler implements CompletionHandler<AsynchronousSocketChanne
 		try {
 			LOG.info("Server accept......"
 					+ ((InetSocketAddress) channel.getLocalAddress()).getAddress().getHostAddress());
-			UserStorage.users.put(String.valueOf(UserStorage.users.size()), channel);
+			ServerListen.users.put(String.valueOf(ServerListen.users.size()), channel);
 			// 成功连接,继续等待下个连接
 			server.accept(attachment, this);
 			// 创建一个数据包传给读取器将读取的包解析后放入其中
 			BytePackage pack = new BytePackage();
 			// 开始读取数据
 			channel.read(this.buffer, pack,
-					new ServerReadHandler((BlockingQueue<BytePackage>) attachment, this.buffer));
-			AsynchronousSocketChannel userCh = UserStorage.users.get(UserStorage.getMessage().getTargetIP());
-			if (userCh != null) {
-				userCh.write(ByteBuffer.wrap(UserStorage.getMessage().getMessage().getBytes()), pack,
-						new ServerWriteHandler(channel, this.buffer));
-			} else {
-				MessageInfo msg = new MessageInfo();
-				msg.setMessage("用户不在线");
-				msg.setTargetIP("0");
-				BytePackage p = new BytePackage();
-				p.setBody(ObjectUtil.toByteArray(msg));
-				p.setLength(p.getBody().length + 8);
-				p.setTotal(200);
-				try {
-					channel.write(ByteBuffer.wrap(ByteTool.formatByte(p)));
-					channel.close();
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
+					new ServerReadHandler((BlockingQueue<BytePackage>) attachment, this.buffer, channel));
+
+			ByteBuffer wb = ByteBuffer.allocate(0);
+			channel.write(wb, wb, new ServerWriteHandler(channel));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

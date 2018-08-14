@@ -16,7 +16,7 @@ public class ByteTool {
 	 * @return 完整消息字节包
 	 */
 	public static byte[] formatByte(BytePackage pack) {
-		ByteBuffer buffer = ByteBuffer.allocate(pack.getLength());
+		ByteBuffer buffer = ByteBuffer.allocate(pack.getLength() + 8);
 		buffer.putInt(pack.getTotal());
 		buffer.putInt(pack.getLength());
 		buffer.put(pack.getBody());
@@ -41,7 +41,7 @@ public class ByteTool {
 					pack.setLength(NumberUtil.byte4ToInt(pack.getPack(), 4));
 				}
 				if (pack.getBody() == null || pack.getLength() > pack.getBody().length) {// 如果传输内容还没读完继续读取
-					if(pack.getBody() == null){
+					if (pack.getBody() == null) {
 						pack.setBody(new byte[0]);
 					}
 					if (buffer.remaining() >= pack.getLength() - pack.getBody().length) {

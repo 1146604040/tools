@@ -63,4 +63,10 @@ public class MessageInfo implements Serializable {
 		this.files = files;
 	}
 
+	@Override
+	public String toString() {
+		return "MessageInfo [targetIP=" + targetIP + ", thisIP=" + thisIP + ", message=" + message + ", files=" + files
+				+ "]";
+	}
+
 }

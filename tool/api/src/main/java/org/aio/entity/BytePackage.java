@@ -1,8 +1,15 @@
 package org.aio.entity;
 
+import java.io.Serializable;
+
 import org.aio.exception.MessageException;
 
-public class BytePackage {
+public class BytePackage implements Serializable {
+
+	/**
+	 * 序列id
+	 */
+	private static final long serialVersionUID = 879678901974261351L;
 
 	/**
 	 * 消息头 200:表示正常内容.4字节

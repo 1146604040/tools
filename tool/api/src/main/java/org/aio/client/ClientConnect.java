@@ -24,36 +24,51 @@ public class ClientConnect {
 	private final static Logger LOG = LoggerFactory.getLogger(ClientConnect.class);
 
 	public static void main(String[] args) throws IOException, InterruptedException {
-		BlockingQueue<BytePackage> sucess = new ArrayBlockingQueue<>(1024);
 
 		AsynchronousChannelGroup group = AsynchronousChannelGroup
 				.withFixedThreadPool(Runtime.getRuntime().availableProcessors(), Executors.defaultThreadFactory());
 		AsynchronousSocketChannel channel = AsynchronousSocketChannel.open(group);
-		channel.connect(new InetSocketAddress("localhost", 8383), sucess, new ClientAcceptHandler(channel));
+		channel.connect(new InetSocketAddress("localhost", 8383), ClientMsgStorage.read,
+				new ClientAcceptHandler(channel));
 		new Thread(new Runnable() {
+			@Override
 			public void run() {
-				Scanner sc = new Scanner(System.in);
-				for (;;) {
-					System.out.println("输入消息");
-					String line = sc.nextLine();
-					if (line != null && !line.isEmpty()) {
-						MessageInfo msg = new MessageInfo();
-						msg.setMessage(line);
-						System.out.println("输入目标:");
-						msg.setTargetIP(sc.nextLine());
-						BytePackage pack = new BytePackage();
-						pack.setBody(ObjectUtil.toByteArray(msg));
-						pack.setLength(pack.getBody().length + 8);
-						try {
-							sucess.put(pack);
-						} catch (InterruptedException e) {
-							e.printStackTrace();
+				try {
+					while (true) {
+						BytePackage t = ClientMsgStorage.read.take();
+						if (t != null && t.getBody().length > 0) {
+							MessageInfo msg = ObjectUtil.toObject(t.getBody(), MessageInfo.class);
+							System.out.println(msg);
 						}
 					}
+				} catch (Exception e) {
+					e.printStackTrace();
 				}
+
 			}
 		}).start();
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				Scanner sc = new Scanner(System.in);
+				try {
+					while (true) {
+						MessageInfo m = new MessageInfo();
+						System.out.println("目标:");
+						m.setTargetIP(sc.nextLine());
+						System.out.println("message:");
+						m.setMessage(sc.nextLine());
+						BytePackage p = new BytePackage();
+						p.setBody(ObjectUtil.toByteArray(m));
+						p.setTotal(200);
+						p.setLength(p.getBody().length);
+						ClientMsgStorage.write.put(p);
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
 
-		LOG.wait();
+			}
+		}).start();
 	}
 }

@@ -2,6 +2,7 @@ package org.aio.client;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 import java.util.concurrent.BlockingQueue;
@@ -20,15 +21,18 @@ public class ClientAcceptHandler implements CompletionHandler<Void, Object> {
 		this.channel = channel;
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public void completed(Void v, Object attachment) {
 		try {
 			LOG.info("Client connection....."
 					+ ((InetSocketAddress) channel.getLocalAddress()).getAddress().getHostAddress());
-			new ClientReadHandler(channel, (BlockingQueue<BytePackage>) attachment).run();
-			new ClientWriteHandler(channel, (BlockingQueue<BytePackage>) attachment).run();;
-			System.out.println();
+			ByteBuffer buffer = ByteBuffer.allocate(1024);
+			BytePackage pack = new BytePackage();
+			channel.read(buffer, pack, new ClientReadHandler(channel, buffer));
+
+			ByteBuffer wb = ByteBuffer.allocate(0);
+			channel.write(wb, wb, new ClientWriteHandler(channel));
+			System.out.println("client over ......");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
