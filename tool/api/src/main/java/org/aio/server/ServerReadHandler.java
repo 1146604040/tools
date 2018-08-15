@@ -27,7 +27,7 @@ public class ServerReadHandler implements CompletionHandler<Integer, Object> {
 			this.buffer.flip();
 			BytePackage pack = (BytePackage) attachment;
 			try {
-				ByteTool.readByte(this.buffer, pack, sucess);
+				pack = ByteTool.readByte(this.buffer, pack, sucess);
 				this.buffer.compact();
 				this.channel.read(this.buffer, pack, this);
 			} catch (InterruptedException e) {

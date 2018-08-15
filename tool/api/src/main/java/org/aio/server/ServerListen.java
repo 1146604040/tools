@@ -35,21 +35,7 @@ public class ServerListen {
 
 	public static final BlockingQueue<BytePackage> queue = new ArrayBlockingQueue<BytePackage>(1024);
 
-	public static final Map<String, AsynchronousSocketChannel> users = new HashMap<>();
-
-	public static MessageInfo getMessage() {
-		try {
-			BytePackage pack = queue.take();
-			if (pack == null)
-				return null;
-			else {
-				return ObjectUtil.toObject(pack.getBody(), MessageInfo.class);
-			}
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-			return null;
-		}
-	}
+	public static final Map<String, BlockingQueue<BytePackage>> users = new HashMap<>();
 
 	public ServerListen() throws IOException {
 		// 设置线程数为CPU核数
@@ -72,18 +58,28 @@ public class ServerListen {
 
 	public static void main(String[] args) throws IOException {
 		new ServerListen().listen();
-		while (true) {
-			try {
-				Thread.sleep(5000);
-				// BytePackage pack = UserStorage.queue.take();
-				// if (pack != null) {
-				// MessageInfo msg = ObjectUtil.toObject(pack.getBody(),
-				// MessageInfo.class);
-				// System.out.println(msg);
-				// }
-			} catch (Exception e) {
-				e.printStackTrace();
+
+		new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+				BytePackage pack;
+				MessageInfo msg;
+				do {
+					try {
+						pack = queue.take();
+						if (pack != null && pack.getBody().length > 0) {
+							msg = ObjectUtil.toObject(pack.getBody(), MessageInfo.class);
+							System.out.println("service:" + msg);
+							users.get(msg.getTargetIP()).put(pack);
+						}
+						pack = null;
+						msg = null;
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				} while (true);
 			}
-		}
+		}).start();
 	}
 }

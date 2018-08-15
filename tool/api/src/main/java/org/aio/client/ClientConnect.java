@@ -38,7 +38,7 @@ public class ClientConnect {
 						BytePackage t = ClientMsgStorage.read.take();
 						if (t != null && t.getBody().length > 0) {
 							MessageInfo msg = ObjectUtil.toObject(t.getBody(), MessageInfo.class);
-							System.out.println(msg);
+							System.out.println("client:" + msg);
 						}
 					}
 				} catch (Exception e) {

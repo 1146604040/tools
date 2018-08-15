@@ -18,33 +18,25 @@ import org.aio.tools.ObjectUtil;
 public class ServerWriteHandler implements CompletionHandler<Integer, Object> {
 
 	private AsynchronousSocketChannel channel;
+	private String id;
 
-	public ServerWriteHandler(AsynchronousSocketChannel channel) {
+	public ServerWriteHandler(AsynchronousSocketChannel channel, String id) {
 		this.channel = channel;
+		this.id = id;
 	}
 
 	@Override
 	public void completed(Integer result, Object attachment) {
 		if (result > 0) {
 			System.out.println("write.....");
-			channel.write((ByteBuffer) attachment, attachment, this);
+			ByteBuffer buffer = (ByteBuffer) attachment;
+			channel.write(buffer, buffer, this);
 		} else {
 			try {
-				BytePackage pack = ServerListen.queue.take();
-				if (pack != null && pack.getBody().length > 0) {
-					MessageInfo msg = ObjectUtil.toObject(pack.getBody(), MessageInfo.class);
-					if (msg != null) {
-						System.out.println(msg);
-						AsynchronousSocketChannel ch = ServerListen.users.get(msg.getTargetIP());
-						ByteBuffer buffer = ByteBuffer.wrap(ByteTool.formatByte(pack));
-						if (ch.equals(this.channel)) {
-							this.channel.write(buffer, buffer, this);
-						} else {
-							ch.write(buffer, buffer, new ServerWriteHandler(ch));
-						}
-					}
-				}
-			} catch (InterruptedException e) {
+				BytePackage pack = ServerListen.users.get(id).take();
+				ByteBuffer buffer = ByteBuffer.wrap(ByteTool.formatByte(pack));
+				channel.write(buffer, buffer, this);
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}

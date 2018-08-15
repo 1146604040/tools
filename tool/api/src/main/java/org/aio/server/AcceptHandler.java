@@ -47,7 +47,8 @@ public class AcceptHandler implements CompletionHandler<AsynchronousSocketChanne
 		try {
 			LOG.info("Server accept......"
 					+ ((InetSocketAddress) channel.getLocalAddress()).getAddress().getHostAddress());
-			ServerListen.users.put(String.valueOf(ServerListen.users.size()), channel);
+			String id = String.valueOf(ServerListen.users.size());
+			ServerListen.users.put(id, new ArrayBlockingQueue<>(1024));
 			// 成功连接,继续等待下个连接
 			server.accept(attachment, this);
 			// 创建一个数据包传给读取器将读取的包解析后放入其中
@@ -57,7 +58,7 @@ public class AcceptHandler implements CompletionHandler<AsynchronousSocketChanne
 					new ServerReadHandler((BlockingQueue<BytePackage>) attachment, this.buffer, channel));
 
 			ByteBuffer wb = ByteBuffer.allocate(0);
-			channel.write(wb, wb, new ServerWriteHandler(channel));
+			channel.write(wb, wb, new ServerWriteHandler(channel, id));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

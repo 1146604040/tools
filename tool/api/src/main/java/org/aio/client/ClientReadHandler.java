@@ -22,9 +22,11 @@ public class ClientReadHandler implements CompletionHandler<Integer, Object> {
 		if (result > 0) {// 如果有数据,开始读
 			this.buffer.flip();
 			try {
-				ByteTool.readByte(this.buffer, (BytePackage) attachment, ClientMsgStorage.read);
+				BytePackage pack = (BytePackage) attachment;
+				pack = ByteTool.readByte(this.buffer, pack, ClientMsgStorage.read);
 				// 继续下一次的读
-				this.channel.read(this.buffer, (BytePackage) attachment, this);
+				this.buffer.compact();
+				this.channel.read(this.buffer, pack, this);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
