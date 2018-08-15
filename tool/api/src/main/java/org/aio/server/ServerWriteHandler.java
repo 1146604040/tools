@@ -27,15 +27,14 @@ public class ServerWriteHandler implements CompletionHandler<Integer, Object> {
 
 	@Override
 	public void completed(Integer result, Object attachment) {
-		if (result > 0) {
-			System.out.println("write.....");
+		if (result > 0) {//如果还有数据则继续写
 			ByteBuffer buffer = (ByteBuffer) attachment;
 			channel.write(buffer, buffer, this);
 		} else {
 			try {
-				BytePackage pack = ServerListen.users.get(id).take();
+				BytePackage pack = ServerListen.users.get(id).take();//从消息队列中获取一个数据包
 				ByteBuffer buffer = ByteBuffer.wrap(ByteTool.formatByte(pack));
-				channel.write(buffer, buffer, this);
+				channel.write(buffer, buffer, this);//发送一个数据包
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

@@ -2,73 +2,51 @@ package org.aio.client;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousSocketChannel;
-import java.util.Scanner;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executors;
 
+import org.aio.entity.ByteFactory;
 import org.aio.entity.BytePackage;
-import org.aio.entity.MessageInfo;
-import org.aio.tools.ByteTool;
-import org.aio.tools.ObjectUtil;
+import org.aio.tools.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ClientConnect {
+public class ClientConnect<T> {
 	/**
 	 * 日志
 	 */
-	private final static Logger LOG = LoggerFactory.getLogger(ClientConnect.class);
+	private final static Logger log = LoggerFactory.getLogger(ClientConnect.class);
 
-	public static void main(String[] args) throws IOException, InterruptedException {
+	private static AsynchronousChannelGroup group;
+	private static AsynchronousSocketChannel channel;
 
-		AsynchronousChannelGroup group = AsynchronousChannelGroup
-				.withFixedThreadPool(Runtime.getRuntime().availableProcessors(), Executors.defaultThreadFactory());
-		AsynchronousSocketChannel channel = AsynchronousSocketChannel.open(group);
-		channel.connect(new InetSocketAddress("localhost", 8383), ClientMsgStorage.read,
-				new ClientAcceptHandler(channel));
-		new Thread(new Runnable() {
-			@Override
-			public void run() {
-				try {
-					while (true) {
-						BytePackage t = ClientMsgStorage.read.take();
-						if (t != null && t.getBody().length > 0) {
-							MessageInfo msg = ObjectUtil.toObject(t.getBody(), MessageInfo.class);
-							System.out.println("client:" + msg);
-						}
-					}
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-
-			}
-		}).start();
-		new Thread(new Runnable() {
-			@Override
-			public void run() {
-				Scanner sc = new Scanner(System.in);
-				try {
-					while (true) {
-						MessageInfo m = new MessageInfo();
-						System.out.println("目标:");
-						m.setTargetIP(sc.nextLine());
-						System.out.println("message:");
-						m.setMessage(sc.nextLine());
-						BytePackage p = new BytePackage();
-						p.setBody(ObjectUtil.toByteArray(m));
-						p.setTotal(200);
-						p.setLength(p.getBody().length);
-						ClientMsgStorage.write.put(p);
-					}
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-
-			}
-		}).start();
+	/**
+	 * 
+	 * @param ip
+	 *            主机名
+	 * @param port
+	 *            端口
+	 * @param read
+	 *            用于存放获取到的主机数据包队列
+	 * @param write
+	 *            用于存放需要发送给主机的数据包队列
+	 * @throws IOException
+	 */
+	public void init(String ip, Integer port, 
+			BlockingQueue<BytePackage> read, 
+			BlockingQueue<BytePackage> write) throws IOException {
+		log.info(DateUtils.getNowDateStr("yyyy-MM-dd hh:mm:ss") 
+				+ ":[local:" + ip + "]\t"
+				+ "[port:" + port + "]\t"
+				+ "[readQueue:" + read.size() + "]\t"
+				+ "[write:" + write.size() + "]\r\n");
+		group = AsynchronousChannelGroup.withFixedThreadPool(Runtime.getRuntime().availableProcessors(),
+				Executors.defaultThreadFactory());
+		channel = AsynchronousSocketChannel.open(group);
+		ByteFactory factory = new ByteFactory(read, write);
+		channel.connect(new InetSocketAddress(ip, port), factory, new ClientAcceptHandler(channel));
 	}
+
 }

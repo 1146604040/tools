@@ -9,7 +9,7 @@ public class BytePackage implements Serializable {
 	/**
 	 * 序列id
 	 */
-	private static final long serialVersionUID = 879678901974261351L;
+	private static transient final long serialVersionUID = 879678901974261351L;
 
 	/**
 	 * 消息头 200:表示正常内容.4字节
@@ -17,12 +17,18 @@ public class BytePackage implements Serializable {
 	private int total;
 
 	/**
+	 * 消息id,为32位uuid
+	 * 
+	 */
+	private byte[] id;
+
+	/**
 	 * 消息长度,4字节
 	 */
 	private int length;
 
 	/**
-	 * 包长
+	 * 包头长
 	 */
 	private int packLength;
 
@@ -31,7 +37,18 @@ public class BytePackage implements Serializable {
 	 */
 	private byte[] body;
 
+	/**
+	 * 解析数据包时用来存放包头
+	 */
 	private byte[] pack = new byte[0];
+
+	public byte[] getId() {
+		return id;
+	}
+
+	public void setId(byte[] id) {
+		this.id = id;
+	}
 
 	public byte[] getPack() {
 		return pack;

@@ -10,14 +10,18 @@ public class ByteTool {
 
 	/**
 	 * 将字节信息格式化为标准字节包 </br>
-	 * <h3>标准字节包:前4字节为包头,接着36字节为消息id,4字节为消息长度,消息体,2字節结束符.</h3>
+	 * <h3>标准字节包:前4字节为包头<br/>
+	 * 接着32字节为消息id<br/>
+	 * 4字节为消息长度<br/>
+	 * 剩下的为消息体</h3>
 	 * 
 	 * @param pack
 	 * @return 完整消息字节包
 	 */
 	public static byte[] formatByte(BytePackage pack) {
-		ByteBuffer buffer = ByteBuffer.allocate(pack.getLength() + 8);
+		ByteBuffer buffer = ByteBuffer.allocate(pack.getLength() + 40);
 		buffer.putInt(pack.getTotal());
+		buffer.put(pack.getId());
 		buffer.putInt(pack.getLength());
 		buffer.put(pack.getBody());
 		return buffer.array();
@@ -26,9 +30,9 @@ public class ByteTool {
 	public static BytePackage readByte(ByteBuffer buffer, BytePackage pack, BlockingQueue<BytePackage> sucess)
 			throws InterruptedException {
 		while (buffer.remaining() > 0) {// 如果获取到了数据
-			if (pack.packLength() < 8) {// 如果包头未完整,获取完整包头
+			if (pack.packLength() < 40) {// 如果包头未完整,获取完整包头
 				byte[] ti;
-				if (buffer.remaining() > 8 - pack.packLength()) {// 如果数据大于包头大小,获取剩余包头,反之获取所有
+				if (buffer.remaining() > 40 - pack.packLength()) {// 如果数据大于包头大小,获取剩余包头,反之获取所有
 					ti = new byte[8 - pack.packLength()];
 				} else {
 					ti = new byte[buffer.remaining()];
@@ -38,7 +42,7 @@ public class ByteTool {
 			} else {// 如果包头完整
 				if (pack.getTotal() <= 0) {
 					pack.setTotal(NumberUtil.byte4ToInt(pack.getPack(), 0));
-					pack.setLength(NumberUtil.byte4ToInt(pack.getPack(), 4));
+					pack.setLength(NumberUtil.byte4ToInt(pack.getPack(), 36));
 				}
 				if (pack.getBody() == null || pack.getLength() > pack.getBody().length) {// 如果传输内容还没读完继续读取
 					if (pack.getBody() == null) {
@@ -62,6 +66,44 @@ public class ByteTool {
 			}
 		}
 		return pack;
+	}
+
+	public static boolean readByteOne(ByteBuffer buffer, BytePackage pack) throws InterruptedException {
+		while (buffer.remaining() > 0) {// 如果获取到了数据
+			if (pack.packLength() < 40) {// 如果包头未完整,获取完整包头
+				byte[] ti;
+				if (buffer.remaining() > 40 - pack.packLength()) {// 如果数据大于包头大小,获取剩余包头,反之获取所有
+					ti = new byte[8 - pack.packLength()];
+				} else {
+					ti = new byte[buffer.remaining()];
+				}
+				buffer.get(ti);
+				pack.setPack(joinByte(pack.getPack(), ti));
+			} else {// 如果包头完整
+				if (pack.getTotal() <= 0) {
+					pack.setTotal(NumberUtil.byte4ToInt(pack.getPack(), 0));
+					pack.setLength(NumberUtil.byte4ToInt(pack.getPack(), 36));
+				}
+				if (pack.getBody() == null || pack.getLength() > pack.getBody().length) {// 如果传输内容还没读完继续读取
+					if (pack.getBody() == null) {
+						pack.setBody(new byte[0]);
+					}
+					if (buffer.remaining() >= pack.getLength() - pack.getBody().length) {
+						byte[] ti = new byte[pack.getLength() - pack.getBody().length];
+						buffer.get(ti);
+						pack.setBody(joinByte(pack.getBody(), ti));
+						return true;
+					} else {
+						byte[] ti = new byte[buffer.remaining()];
+						buffer.get(ti);
+						pack.setBody(joinByte(pack.getBody(), ti));
+					}
+				} else {
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	public static byte[] joinByte(byte[] bt, byte[] tar) {

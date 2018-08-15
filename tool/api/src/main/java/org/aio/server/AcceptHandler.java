@@ -6,31 +6,33 @@ import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
+import java.util.Date;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
+import org.aio.client.ClientReadHandler;
+import org.aio.client.ClientWriteHandler;
+import org.aio.entity.ByteFactory;
 import org.aio.entity.BytePackage;
 import org.aio.entity.MessageInfo;
+import org.aio.entity.UserInfo;
 import org.aio.entity.UserStorage;
 import org.aio.tools.ByteTool;
 import org.aio.tools.ObjectUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class AcceptHandler implements CompletionHandler<AsynchronousSocketChannel, Object> {
+public class AcceptHandler implements CompletionHandler<AsynchronousSocketChannel, BlockingQueue<BytePackage>> {
 
 	/**
 	 * 日志
 	 */
-	private final static Logger LOG = LoggerFactory.getLogger(AcceptHandler.class);
+	private final static Logger log = LoggerFactory.getLogger(AcceptHandler.class);
 
 	private AsynchronousServerSocketChannel server;
-	private ByteBuffer buffer;
 
 	public AcceptHandler(AsynchronousServerSocketChannel server) {
 		this.server = server;
-		// 初始化一个容器用于读数据
-		this.buffer = ByteBuffer.allocate(1024);
 	}
 
 	/**
@@ -41,32 +43,25 @@ public class AcceptHandler implements CompletionHandler<AsynchronousSocketChanne
 	 * @param attachment
 	 *            附件
 	 */
-	@SuppressWarnings("unchecked")
 	@Override
-	public void completed(AsynchronousSocketChannel channel, Object attachment) {
+	public void completed(AsynchronousSocketChannel channel, BlockingQueue<BytePackage> read) {
 		try {
-			LOG.info("Server accept......"
-					+ ((InetSocketAddress) channel.getLocalAddress()).getAddress().getHostAddress());
-			String id = String.valueOf(ServerListen.users.size());
-			ServerListen.users.put(id, new ArrayBlockingQueue<>(1024));
+			String hostAddress = ((InetSocketAddress) channel.getLocalAddress()).getAddress().getHostAddress();
+			log.info("Server accept......" + hostAddress);
 			// 成功连接,继续等待下个连接
-			server.accept(attachment, this);
-			// 创建一个数据包传给读取器将读取的包解析后放入其中
-			BytePackage pack = new BytePackage();
-			// 开始读取数据
-			channel.read(this.buffer, pack,
-					new ServerReadHandler((BlockingQueue<BytePackage>) attachment, this.buffer, channel));
+			server.accept(read, this);
 
-			ByteBuffer wb = ByteBuffer.allocate(0);
-			channel.write(wb, wb, new ServerWriteHandler(channel, id));
+			BytePackage pack = new BytePackage();
+			ByteBuffer buffer = ByteBuffer.allocate(1024);
+			channel.read(buffer, pack, new ServerReadHandler(channel, read, buffer));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 
 	@Override
-	public void failed(Throwable exc, Object attachment) {
-		LOG.error("连接失败.........");
+	public void failed(Throwable exc, BlockingQueue<BytePackage> read) {
+		log.error("Accept error.........");
 	}
 
 }

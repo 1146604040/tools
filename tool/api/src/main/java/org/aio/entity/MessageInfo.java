@@ -9,7 +9,7 @@ public class MessageInfo implements Serializable {
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = 6594475319630806870L;
+	private static transient final long serialVersionUID = 6594475319630806870L;
 
 	/**
 	 * 接收对象IP
@@ -27,7 +27,7 @@ public class MessageInfo implements Serializable {
 	private String message;
 
 	/**
-	 * 文件/图片
+	 * 文件
 	 */
 	private List<File> files;
 
