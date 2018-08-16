@@ -6,6 +6,7 @@ import java.nio.channels.CompletionHandler;
 
 import org.aio.entity.BytePackage;
 import org.aio.entity.MessageInfo;
+import org.aio.entity.UserInfo;
 import org.aio.tools.ByteTool;
 import org.aio.tools.ObjectUtil;
 
@@ -15,26 +16,24 @@ import org.aio.tools.ObjectUtil;
  * @author H02
  *
  */
-public class ServerWriteHandler implements CompletionHandler<Integer, Object> {
+public class ServerWriteHandler implements CompletionHandler<Integer, ByteBuffer> {
 
-	private AsynchronousSocketChannel channel;
-	private String id;
+	private final AsynchronousSocketChannel channel;
+	private final UserInfo user;
 
-	public ServerWriteHandler(AsynchronousSocketChannel channel, String id) {
+	public ServerWriteHandler(AsynchronousSocketChannel channel, UserInfo user) {
 		this.channel = channel;
-		this.id = id;
+		this.user = user;
 	}
 
 	@Override
-	public void completed(Integer result, Object attachment) {
-		if (result > 0) {//如果还有数据则继续写
-			ByteBuffer buffer = (ByteBuffer) attachment;
+	public void completed(Integer result, ByteBuffer buffer) {
+		if (result > 0) {// 如果还有数据则继续写
 			channel.write(buffer, buffer, this);
 		} else {
 			try {
-				BytePackage pack = ServerListen.users.get(id).take();//从消息队列中获取一个数据包
-				ByteBuffer buffer = ByteBuffer.wrap(ByteTool.formatByte(pack));
-				channel.write(buffer, buffer, this);//发送一个数据包
+				buffer = ByteBuffer.wrap(ByteTool.formatByte(user.getWrite().take()));
+				channel.write(buffer, buffer, this);// 发送一个数据包
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -42,8 +41,7 @@ public class ServerWriteHandler implements CompletionHandler<Integer, Object> {
 	}
 
 	@Override
-	public void failed(Throwable exc, Object attachment) {
+	public void failed(Throwable exc, ByteBuffer attachment) {
 		System.out.println("wirte failed....");
 	}
-
 }

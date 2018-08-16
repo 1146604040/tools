@@ -22,7 +22,7 @@ import org.aio.tools.ObjectUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class AcceptHandler implements CompletionHandler<AsynchronousSocketChannel, BlockingQueue<BytePackage>> {
+public class AcceptHandler implements CompletionHandler<AsynchronousSocketChannel, MessageDispose> {
 
 	/**
 	 * 日志
@@ -44,23 +44,23 @@ public class AcceptHandler implements CompletionHandler<AsynchronousSocketChanne
 	 *            附件
 	 */
 	@Override
-	public void completed(AsynchronousSocketChannel channel, BlockingQueue<BytePackage> read) {
+	public void completed(AsynchronousSocketChannel channel, MessageDispose md) {
 		try {
 			String hostAddress = ((InetSocketAddress) channel.getLocalAddress()).getAddress().getHostAddress();
 			log.info("Server accept......" + hostAddress);
 			// 成功连接,继续等待下个连接
-			server.accept(read, this);
+			server.accept(md, this);
 
 			BytePackage pack = new BytePackage();
 			ByteBuffer buffer = ByteBuffer.allocate(1024);
-			channel.read(buffer, pack, new ServerReadHandler(channel, read, buffer));
+			channel.read(buffer, pack, new ServerReadHandler(channel, md, buffer));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 
 	@Override
-	public void failed(Throwable exc, BlockingQueue<BytePackage> read) {
+	public void failed(Throwable exc, MessageDispose md) {
 		log.error("Accept error.........");
 	}
 

@@ -30,9 +30,7 @@ public class ServerListen {
 	 */
 	private AsynchronousServerSocketChannel server;
 
-	public BlockingQueue<BytePackage> read;
-
-	public static final Map<String, BlockingQueue<BytePackage>> users = new HashMap<>();
+	private final MessageDispose md;
 
 	private AsynchronousChannelGroup channelGroup;
 
@@ -48,9 +46,8 @@ public class ServerListen {
 	 *            客户端数据存放队列
 	 * @throws IOException
 	 */
-	public void init(Integer port, Integer threadNumber, ThreadFactory threadFactory, BlockingQueue<BytePackage> read)
-			throws IOException {
-		this.read = read;
+
+	public void init(Integer port, Integer threadNumber, ThreadFactory threadFactory) throws IOException {
 		channelGroup = AsynchronousChannelGroup.withFixedThreadPool(threadNumber, threadFactory);
 		server = AsynchronousServerSocketChannel.open(channelGroup);
 		server.setOption(StandardSocketOptions.SO_REUSEADDR, true);
@@ -58,11 +55,16 @@ public class ServerListen {
 		server.bind(new InetSocketAddress(port), 1024);
 	}
 
+	public ServerListen(BlockingQueue<BytePackage> read) {
+		md = new MessageDispose(read);
+	}
+
 	public void listen() {
 		log.info("Server start listen .......");
 
 		// 开始监听
-		server.accept(this.read, new AcceptHandler(server));
+		server.accept(md, new AcceptHandler(server));
+		md.start();
 	}
 
 }

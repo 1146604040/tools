@@ -30,6 +30,7 @@ public class ClientWriteHandler implements CompletionHandler<Integer, ByteBuffer
 			// 还有未写完的数据
 			this.channel.write(buffer, buffer, this);
 		} else {
+			buffer.clear();
 			this.pack = rw.getByte();
 			if (pack != null) {
 				buffer = ByteBuffer.wrap(ByteTool.formatByte(pack));

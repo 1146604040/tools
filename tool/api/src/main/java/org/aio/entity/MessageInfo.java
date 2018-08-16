@@ -1,20 +1,23 @@
 package org.aio.entity;
 
-import java.io.File;
 import java.io.Serializable;
-import java.util.List;
 
 public class MessageInfo implements Serializable {
 
 	/**
 	 * 
 	 */
-	private static transient final long serialVersionUID = 6594475319630806870L;
+	private static final long serialVersionUID = 6594475319630806870L;
 
 	/**
 	 * 接收对象IP
 	 */
 	private String targetIP;
+
+	/**
+	 * 对象id
+	 */
+	private String targetId;
 
 	/**
 	 * 发送对象IP
@@ -29,7 +32,15 @@ public class MessageInfo implements Serializable {
 	/**
 	 * 文件
 	 */
-	private List<File> files;
+	private byte[][] files;
+
+	public String getTargetId() {
+		return targetId;
+	}
+
+	public void setTargetId(String targetId) {
+		this.targetId = targetId;
+	}
 
 	public String getTargetIP() {
 		return targetIP;
@@ -41,10 +52,6 @@ public class MessageInfo implements Serializable {
 
 	public String getMessage() {
 		return message;
-	}
-
-	public List<File> getFiles() {
-		return files;
 	}
 
 	public void setTargetIP(String targetIP) {
@@ -59,7 +66,11 @@ public class MessageInfo implements Serializable {
 		this.message = message;
 	}
 
-	public void setFiles(List<File> files) {
+	public byte[][] getFiles() {
+		return files;
+	}
+
+	public void setFiles(byte[][] files) {
 		this.files = files;
 	}
 

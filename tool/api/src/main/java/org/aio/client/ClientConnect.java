@@ -13,7 +13,7 @@ import org.aio.tools.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ClientConnect<T> {
+public class ClientConnect {
 	/**
 	 * 日志
 	 */

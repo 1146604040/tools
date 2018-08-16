@@ -33,7 +33,7 @@ public class ByteTool {
 			if (pack.packLength() < 40) {// 如果包头未完整,获取完整包头
 				byte[] ti;
 				if (buffer.remaining() > 40 - pack.packLength()) {// 如果数据大于包头大小,获取剩余包头,反之获取所有
-					ti = new byte[8 - pack.packLength()];
+					ti = new byte[40 - pack.packLength()];
 				} else {
 					ti = new byte[buffer.remaining()];
 				}
@@ -42,6 +42,8 @@ public class ByteTool {
 			} else {// 如果包头完整
 				if (pack.getTotal() <= 0) {
 					pack.setTotal(NumberUtil.byte4ToInt(pack.getPack(), 0));
+					pack.setId(new byte[32]);
+					System.arraycopy(pack.getPack(), 4, pack.getId(), 0, 32);
 					pack.setLength(NumberUtil.byte4ToInt(pack.getPack(), 36));
 				}
 				if (pack.getBody() == null || pack.getLength() > pack.getBody().length) {// 如果传输内容还没读完继续读取
@@ -73,7 +75,7 @@ public class ByteTool {
 			if (pack.packLength() < 40) {// 如果包头未完整,获取完整包头
 				byte[] ti;
 				if (buffer.remaining() > 40 - pack.packLength()) {// 如果数据大于包头大小,获取剩余包头,反之获取所有
-					ti = new byte[8 - pack.packLength()];
+					ti = new byte[40 - pack.packLength()];
 				} else {
 					ti = new byte[buffer.remaining()];
 				}
@@ -82,6 +84,8 @@ public class ByteTool {
 			} else {// 如果包头完整
 				if (pack.getTotal() <= 0) {
 					pack.setTotal(NumberUtil.byte4ToInt(pack.getPack(), 0));
+					pack.setId(new byte[32]);
+					System.arraycopy(pack.getPack(), 4, pack.getId(), 0, 32);
 					pack.setLength(NumberUtil.byte4ToInt(pack.getPack(), 36));
 				}
 				if (pack.getBody() == null || pack.getLength() > pack.getBody().length) {// 如果传输内容还没读完继续读取
